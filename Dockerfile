@@ -42,6 +42,9 @@ RUN pnpm ui:install && pnpm ui:build
 FROM node:22-bookworm
 ENV NODE_ENV=production
 
+ARG OPENCLAW_USE_TAILSCALE=false
+ENV OPENCLAW_USE_TAILSCALE=${OPENCLAW_USE_TAILSCALE}
+
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -57,6 +60,14 @@ RUN apt-get update \
     pkg-config \
     sudo \
   && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+  if [ "${OPENCLAW_USE_TAILSCALE}" = "true" ]; then \
+    echo "[docker] installing tailscale"; \
+    curl -fsSL https://tailscale.com/install.sh | sh; \
+  else \
+    echo "[docker] skipping tailscale install (OPENCLAW_USE_TAILSCALE=${OPENCLAW_USE_TAILSCALE})"; \
+  fi
 
 # Install Homebrew (must run as non-root user)
 # Create a user for Homebrew installation, install it, then make it accessible to all users
@@ -86,6 +97,10 @@ RUN printf '%s\n' '#!/usr/bin/env bash' 'exec node /openclaw/dist/entry.js "$@"'
 
 COPY src ./src
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 ENV PORT=8080
 EXPOSE 8080
 CMD ["node", "src/server.js"]
