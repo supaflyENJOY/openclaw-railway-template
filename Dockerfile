@@ -10,7 +10,6 @@ RUN apt-get update \
     python3 \
     make \
     g++ \
-    resolvconf \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Bun (openclaw build uses it)
