@@ -11,8 +11,10 @@ is_true() {
 if is_true "${OPENCLAW_USE_TAILSCALE:-false}"; then
   if command -v tailscaled >/dev/null 2>&1; then
     echo "[entrypoint] OPENCLAW_USE_TAILSCALE=true: starting tailscaled (userspace networking)" 1>&2
-    mkdir -p /data/tailscale || true
-    tailscaled --tun=userspace-networking --state=/data/tailscale/tailscaled.state 1>&2 &
+    OPENCLAW_STATE_DIR="${OPENCLAW_STATE_DIR:-/data/.openclaw}"
+    TS_STATE_DIR="${OPENCLAW_STATE_DIR%/}/tailscale"
+    mkdir -p "${TS_STATE_DIR}" || true
+    tailscaled --tun=userspace-networking --state="${TS_STATE_DIR}/tailscaled.state" 1>&2 &
   else
     echo "[entrypoint] OPENCLAW_USE_TAILSCALE=true but tailscaled is not installed (image built without it); continuing" 1>&2
   fi
